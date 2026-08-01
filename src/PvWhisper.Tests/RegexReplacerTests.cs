@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using PvWhisper.Text;
 
 // ReSharper disable ConvertToConstant.Local
@@ -97,6 +98,43 @@ public class RegexReplacerTests
         // Assert
         // {3} becomes empty string, {1} is "abc"
         Assert.Equal("-abc", result);
+    }
+
+    [Fact]
+    public void ReplaceWithGroups_RepeatedCallsWithSamePattern_DoNotReuseStaleState()
+    {
+        // Arrange: the same pattern applied to different inputs must not leak match
+        // state between calls now that compiled patterns are cached across calls.
+        var pattern = @"^Space\s(\w)";
+        var replace = "{1:ToUpper}";
+
+        // Act
+        var first  = Replacer.RegexReplace("Space alpha", pattern, replace);
+        var second = Replacer.RegexReplace("Space bravo", pattern, replace);
+        var third  = Replacer.RegexReplace("no match here", pattern, replace);
+        var fourth = Replacer.RegexReplace("Space alpha", pattern, replace);
+
+        // Assert
+        Assert.Equal("Alpha", first);
+        Assert.Equal("Bravo", second);
+        Assert.Equal("no match here", third);
+        Assert.Equal(first, fourth);
+    }
+
+    [Fact]
+    public void ReplaceWithGroups_SamePatternDifferentOptions_AreCachedSeparately()
+    {
+        // Arrange
+        var pattern = @"^space\s(\w)";
+        var replace = "{1:ToUpper}";
+
+        // Act
+        var sensitive   = Replacer.RegexReplace("Space alpha", pattern, replace, RegexOptions.None);
+        var insensitive = Replacer.RegexReplace("Space alpha", pattern, replace, RegexOptions.IgnoreCase);
+
+        // Assert
+        Assert.Equal("Space alpha", sensitive);
+        Assert.Equal("Alpha", insensitive);
     }
 
     [Fact]

@@ -67,7 +67,7 @@ internal static class Program
             deviceResolver.LogAvailable();
 
             var publishers = BuildPublishers(config, logger);
-            var captureManager = new CaptureManager(deviceResolver, config.FrameLength, logger);
+            var captureManager = new CaptureManager(deviceResolver, config.FrameLength, config.CaptureTimeoutSeconds, logger);
             var outputDispatcher = new OutputDispatcher(publishers);
             var commandChannelFactory = new CommandChannelFactory(config, logger);
 
