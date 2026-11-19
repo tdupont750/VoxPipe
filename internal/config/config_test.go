@@ -238,3 +238,44 @@ func TestExampleConfigLoadsAndRegexesCompile(t *testing.T) {
 		}
 	}
 }
+
+func TestLoadResolvesRelativeModelDirAgainstConfigFile(t *testing.T) {
+	isolate(t)
+	cfgDir := t.TempDir()
+	t.Chdir(t.TempDir()) // launch directory must not matter
+
+	path := filepath.Join(cfgDir, FileName)
+	if err := os.WriteFile(path, []byte("modelDir = 'models/sub'\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := LoadFile(path, nopLog{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := filepath.Join(cfgDir, "models", "sub")
+	if cfg.ModelDir != want {
+		t.Errorf("modelDir = %q, want %q", cfg.ModelDir, want)
+	}
+	if st, err := os.Stat(want); err != nil || !st.IsDir() {
+		t.Errorf("model dir not created next to config: %v", err)
+	}
+}
+
+func TestLoadRelativeConfigPathStillResolvesToAbsolute(t *testing.T) {
+	isolate(t)
+	cfgDir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(cfgDir, FileName), []byte("modelDir = 'm'\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Chdir(cfgDir)
+
+	cfg, err := LoadFile(FileName, nopLog{}) // relative config path
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !filepath.IsAbs(cfg.ModelDir) || !samePath(t, cfg.ModelDir, filepath.Join(cfgDir, "m")) {
+		t.Errorf("modelDir = %q", cfg.ModelDir)
+	}
+}

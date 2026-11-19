@@ -59,7 +59,7 @@ assets/                   logo
 - `outputs`: `Console`, `Clipboard`, `Ydotool` (case-insensitive)
 - `deviceIndex` / `deviceName`: name is a case-insensitive substring match, index is the fallback (-1 = system default)
 - `modelType`: `Tiny`, `Base`, `Small`, `Medium`, `Large` (Large downloads large-v3-turbo, saved as `ggml-large.bin`)
-- `modelDir`: model directory, `~` expanded, created if missing, default `$XDG_DATA_HOME/voxpipe/models`; models download from HuggingFace if absent
+- `modelDir`: model directory, `~` expanded, relative paths are relative to the config file, created if missing, default `$XDG_DATA_HOME/voxpipe/models`; models download from HuggingFace if absent
 - `httpPort`: enables the HTTP source when > 0
 - `captureTimeoutSeconds`: auto-stop after N seconds
 - `language`, `whisperThreads`, `frameLength`

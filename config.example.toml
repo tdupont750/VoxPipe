@@ -17,7 +17,8 @@ language = "en"
 
 # Whisper model: "Tiny", "Base", "Small", "Medium", "Large" (large-v3-turbo)
 modelType = "Base"
-# Where models live and are downloaded to. "~" is expanded; created if missing.
+# Where models live and are downloaded to. "~" is expanded; a relative path is relative to
+# this config file; created if missing.
 # Default: ~/.local/share/voxpipe/models (or $XDG_DATA_HOME/voxpipe/models)
 # modelDir = "~/.local/share/voxpipe/models"
 

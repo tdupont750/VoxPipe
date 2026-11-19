@@ -73,7 +73,8 @@ type AppConfig struct {
 
 	Language  string    `toml:"language"`
 	ModelType ModelKind `toml:"modelType"`
-	// ModelDir is where model files are stored/loaded. Defaults to the XDG data directory.
+	// ModelDir is where model files are stored/loaded. A relative path is relative to the config
+	// file's directory. Defaults to the XDG data directory.
 	ModelDir string `toml:"modelDir"`
 
 	// WhisperThreads is the number of threads Whisper uses for inference.
@@ -213,7 +214,7 @@ func LoadFile(path string, log Logger) (*AppConfig, error) {
 		}
 	}
 
-	full, err := filepath.Abs(ExpandPath(cfg.ModelDir))
+	full, err := resolveModelDir(cfg.ModelDir, path)
 	if err != nil {
 		return nil, fmt.Errorf("invalid modelDir %q: %w", cfg.ModelDir, err)
 	}
@@ -227,4 +228,20 @@ func LoadFile(path string, log Logger) (*AppConfig, error) {
 	cfg.ModelDir = full
 
 	return &cfg, nil
+}
+
+// resolveModelDir expands "~" and makes the result absolute. A relative path is taken
+// relative to the directory of the config file, not the process working directory, so the
+// result does not depend on where the binary is launched from.
+func resolveModelDir(modelDir, configPath string) (string, error) {
+	p := ExpandPath(modelDir)
+	if filepath.IsAbs(p) {
+		return filepath.Clean(p), nil
+	}
+
+	base, err := filepath.Abs(filepath.Dir(configPath))
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(base, p), nil
 }
