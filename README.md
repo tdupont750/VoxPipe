@@ -1,4 +1,4 @@
-# GoWhisper
+# VoxPipe
 
 Yet another Speech-to-Text console application. Developed and tested on Linux only.
 
@@ -39,10 +39,10 @@ Why make yet another Speech-to-Text program? It was fun, I wanted it to run from
 3. Clone with submodules: `git clone --recurse-submodules <repo>` (or `git submodule update --init --recursive`)
 4. Configure via `AppConfig.json`
 5. Build with `make build` (the first build compiles whisper.cpp, which takes a minute or two)
-6. Execute `run_pvw.sh`, which runs the prebuilt `bin/gowhisper`
-7. Toggle capture by executing `toggle_pvw.sh`
+6. Execute `run_voxpipe.sh`, which runs the prebuilt `bin/voxpipe`
+7. Toggle capture by executing `toggle_voxpipe.sh`
 
-`make build` produces `bin/gowhisper`; you can also run it directly from the directory holding `AppConfig.json`. Use `make test` rather than `go test` so cgo finds whisper.cpp.
+`make build` produces `bin/voxpipe`; you can also run it directly from the directory holding `AppConfig.json`. Use `make test` rather than `go test` so cgo finds whisper.cpp.
 
 ## Configuration
 
@@ -97,7 +97,7 @@ sudo make install;
 # systemctl --user start ydotoold.service;
 ```
 
-The service requires root, so run `start_ydotoold.sh` before starting GoWhisper
+The service requires root, so run `start_ydotoold.sh` before starting VoxPipe
 
 ### keyd
 
@@ -112,7 +112,7 @@ make && sudo make install
 sudo systemctl enable --now keyd
 ```
 
-My configuration (`/etc/keyd/default.conf`) remaps Caps Lock to a global shortcut that invokes toggle script (`toggle_pvw.sh`)
+My configuration (`/etc/keyd/default.conf`) remaps Caps Lock to a global shortcut that invokes toggle script (`toggle_voxpipe.sh`)
 
 ```
 [ids]

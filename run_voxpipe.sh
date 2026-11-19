@@ -2,9 +2,9 @@
 set -euo pipefail
 
 # Usage:
-#   ./run_pvw.sh
+#   ./run_voxpipe.sh
 #
-# Runs the prebuilt bin/gowhisper from the repo root, so AppConfig.json is found.
+# Runs the prebuilt bin/voxpipe from the repo root, so AppConfig.json is found.
 # Build it first with: make build
 
 INFO() { echo -e "\e[34m[SH] [INFO] $*\e[0m"; }
@@ -18,7 +18,7 @@ cd "$ROOT_DIR"
 
 DEBUG "Using directory: $ROOT_DIR"
 
-BINARY="$ROOT_DIR/bin/gowhisper"
+BINARY="$ROOT_DIR/bin/voxpipe"
 if [[ ! -x "$BINARY" ]]; then
   ERROR "$BINARY not found or not executable. Build it first with: make build"
   exit 1
@@ -30,8 +30,8 @@ if ! pgrep -x ydotoold &>/dev/null; then
 fi
 
 # Guard against concurrent instances
-if pgrep -x gowhisper &>/dev/null; then
-  ERROR "Another instance of GoWhisper is already running"
+if pgrep -x voxpipe &>/dev/null; then
+  ERROR "Another instance of VoxPipe is already running"
   exit 1
 fi
 
@@ -41,6 +41,6 @@ set +e
 EXIT_CODE=$?
 set -e
 
-DEBUG "GoWhisper exited with code: $EXIT_CODE"
+DEBUG "VoxPipe exited with code: $EXIT_CODE"
 INFO "Done!"
 exit "$EXIT_CODE"

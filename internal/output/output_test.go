@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"gowhisper/internal/config"
+	"voxpipe/internal/config"
 )
 
 type recLog struct{ lines []string }

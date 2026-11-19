@@ -10,8 +10,8 @@ import (
 
 	"github.com/ggerganov/whisper.cpp/bindings/go/pkg/whisper"
 
-	"gowhisper/internal/audio"
-	"gowhisper/internal/text"
+	"voxpipe/internal/audio"
+	"voxpipe/internal/text"
 )
 
 // Transcriber runs whisper.cpp inference. The model is loaded once; each call gets its own context.

@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"gowhisper/internal/config"
+	"voxpipe/internal/config"
 )
 
 const defaultModelBaseURL = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/"

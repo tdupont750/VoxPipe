@@ -1,4 +1,4 @@
-// Command gowhisper is a speech-to-text tool: capture audio, transcribe with whisper.cpp, and
+// Command voxpipe is a speech-to-text tool: capture audio, transcribe with whisper.cpp, and
 // output to the console, clipboard or a virtual keyboard (ydotool).
 package main
 
@@ -10,14 +10,14 @@ import (
 	"syscall"
 	"time"
 
-	"gowhisper/internal/app"
-	"gowhisper/internal/audio"
-	"gowhisper/internal/config"
-	"gowhisper/internal/input"
-	"gowhisper/internal/logging"
-	"gowhisper/internal/output"
-	"gowhisper/internal/text"
-	"gowhisper/internal/transcribe"
+	"voxpipe/internal/app"
+	"voxpipe/internal/audio"
+	"voxpipe/internal/config"
+	"voxpipe/internal/input"
+	"voxpipe/internal/logging"
+	"voxpipe/internal/output"
+	"voxpipe/internal/text"
+	"voxpipe/internal/transcribe"
 )
 
 func main() {
@@ -94,7 +94,7 @@ func run() int {
 
 	cancel()
 	waitSources()
-	log.Debug("GoWhisper stopped.")
+	log.Debug("VoxPipe stopped.")
 	return 0
 }
 
@@ -109,7 +109,7 @@ func fatal(log *logging.Logger, ctx context.Context, err error) int {
 }
 
 func printStartupInfo(cfg *config.AppConfig, log *logging.Logger) {
-	log.Debug("GoWhisper: a cross platform Speech to Text program")
+	log.Debug("VoxPipe: a cross platform Speech to Text program")
 	log.Debug("Commands:")
 	log.Debug("  v = toggle capture (start / stop + transcribe)")
 	log.Debug("  c = start capture")

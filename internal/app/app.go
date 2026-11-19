@@ -9,7 +9,7 @@ import (
 	"time"
 	"unicode"
 
-	"gowhisper/internal/audio"
+	"voxpipe/internal/audio"
 )
 
 const (

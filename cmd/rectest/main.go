@@ -8,8 +8,8 @@ import (
 	"os"
 	"time"
 
-	"gowhisper/internal/audio"
-	"gowhisper/internal/logging"
+	"voxpipe/internal/audio"
+	"voxpipe/internal/logging"
 )
 
 func main() {

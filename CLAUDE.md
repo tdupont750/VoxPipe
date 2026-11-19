@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-GoWhisper is a Go speech-to-text console application. It captures microphone audio, transcribes it with whisper.cpp (CPU only, via cgo), and outputs to the console, clipboard, or a virtual keyboard (ydotool). It is a port of the earlier C# PvWhisper app (see git history before the Go cutover).
+VoxPipe is a Go speech-to-text console application. It captures microphone audio, transcribes it with whisper.cpp (CPU only, via cgo), and outputs to the console, clipboard, or a virtual keyboard (ydotool). It is a port of the earlier C# PvWhisper app (see git history before the Go cutover).
 
 ## Build and Test Commands
 
@@ -12,11 +12,11 @@ whisper.cpp is a git submodule built into `build/whisper`. Always go through `ma
 
 ```bash
 git submodule update --init --recursive   # first clone only
-make build      # builds libwhisper if needed, then bin/gowhisper
+make build      # builds libwhisper if needed, then bin/voxpipe
 make test       # go test ./...
 make vet        # go vet ./...
-./run_pvw.sh    # run prebuilt bin/gowhisper (requires make build first)
-./toggle_pvw.sh # POST /command/v to the HTTP source (default port 5042)
+./run_voxpipe.sh    # run prebuilt bin/voxpipe (requires make build first)
+./toggle_voxpipe.sh # POST /command/v to the HTTP source (default port 5042)
 
 # Single test
 make libwhisper && C_INCLUDE_PATH=$PWD/third_party/whisper.cpp/include:$PWD/third_party/whisper.cpp/ggml/include \
@@ -33,7 +33,7 @@ Build prerequisites: Go 1.24+, `gcc`, `g++`, `cmake`, `make`, `libasound2-dev`.
 ## Architecture
 
 ```
-cmd/gowhisper/main.go     wiring (constructors, signal handling)
+cmd/voxpipe/main.go     wiring (constructors, signal handling)
 cmd/rectest/              manual recorder for the audio package
 internal/app/             command loop
 internal/config/          AppConfig.json load/validate, enums, ~ expansion

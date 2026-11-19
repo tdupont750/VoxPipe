@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io"
 
-	"gowhisper/internal/config"
+	"voxpipe/internal/config"
 )
 
 // Logger is the subset of logging.Logger used here.

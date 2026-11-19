@@ -1,4 +1,4 @@
-module gowhisper
+module voxpipe
 
 go 1.24.5
 

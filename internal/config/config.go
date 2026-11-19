@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gowhisper/internal/text"
+	"voxpipe/internal/text"
 )
 
 // ModelKind is the Whisper model size.

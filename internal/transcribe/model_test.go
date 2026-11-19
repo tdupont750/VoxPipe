@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"gowhisper/internal/config"
+	"voxpipe/internal/config"
 )
 
 type nopLog struct{}

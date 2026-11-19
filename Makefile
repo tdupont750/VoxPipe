@@ -19,7 +19,7 @@ $(BUILD_DIR)/src/libwhisper.a:
 libwhisper: $(BUILD_DIR)/src/libwhisper.a
 
 build: libwhisper
-	go build -o bin/gowhisper ./cmd/gowhisper
+	go build -o bin/voxpipe ./cmd/voxpipe
 
 test: libwhisper
 	go test ./...
@@ -28,7 +28,7 @@ vet: libwhisper
 	go vet ./...
 
 run: build
-	./bin/gowhisper
+	./bin/voxpipe
 
 clean:
 	rm -rf build bin

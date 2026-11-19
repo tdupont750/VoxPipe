@@ -25,7 +25,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
-# Go toolchain for the GoWhisper port. Ubuntu 24.04 ships Go 1.22, so install the
+# Go toolchain for the VoxPipe port. Ubuntu 24.04 ships Go 1.22, so install the
 # official tarball. build-essential/cmake/libasound2-dev above cover cgo (whisper.cpp, malgo).
 ARG GO_VERSION=1.24.5
 RUN arch="$(dpkg --print-architecture)" \
