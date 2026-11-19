@@ -1,22 +1,21 @@
-# PvWhisper
+# GoWhisper
 
-Yet another cross-platform Speech-to-Text console application.
+Yet another Speech-to-Text console application. Developed and tested on Linux only.
 
-Build using [dotnet](https://dotnet.microsoft.com/en-us/download), [PvRecorder](https://github.com/Picovoice/pvrecorder), [Whisper.net](https://github.com/sandrohanea/whisper.net), [ydotool](https://github.com/ReimuNotMoe/ydotool), and [JetBrains Junie](https://www.jetbrains.com/junie/), but you should really use [Claude Code](https://claude.com/product/claude-code).
+Built with [Go](https://go.dev), [whisper.cpp](https://github.com/ggml-org/whisper.cpp), [malgo](https://github.com/gen2brain/malgo), [ydotool](https://github.com/ReimuNotMoe/ydotool), and [Claude Code](https://claude.com/product/claude-code). Ported from the original C# PvWhisper.
 
-Why make yet another Speech-to-Text program? It was fun, I wanted it to just run from a console without requiring any installs, and it supports multiple outputs.
+Why make yet another Speech-to-Text program? It was fun, I wanted it to run from a console, and it supports multiple outputs.
 
 ![Clause](imgs/PvWhisper_small.png)
 
 ## Features
 
 - **Write to Console**
-  - Prints transcribed Speech-to-Text to the console  
-  - Works on Linux, Mac, and Windows
+  - Prints transcribed Speech-to-Text to the console
 
 - **Write to Clipboard**
   - Copies transcribed Speech-to-Text to the system clipboard  
-  - Works on Linux, Mac, and Windows
+  - Requires `wl-copy` (wl-clipboard), `xclip`, or `xsel`
 
 - **Write to Virtual Keyboard (ydotool)**
   - Types transcribed Speech-to-Text into a virtual keyboard  
@@ -28,7 +27,6 @@ Why make yet another Speech-to-Text program? It was fun, I wanted it to just run
 
 - **Toggle speech capture via HTTP**
   - Create a global shortcut to toggle speech capture via shell script
-  - Works on Linux, Mac, and Windows
 
 - **Text transformations with Regular Expressions**
   - Create any number of transform rules
@@ -36,25 +34,29 @@ Why make yet another Speech-to-Text program? It was fun, I wanted it to just run
 
 ## Getting Started
 
-1. Install the [dotnet SDK 10.0](https://dotnet.microsoft.com/en-us/download)
+1. Install Go 1.24+ and build tools: `sudo apt install build-essential cmake libasound2-dev`
 2. Optional: ydotool and keyd (see sections below)
-3. Clone this repository
+3. Clone with submodules: `git clone --recurse-submodules <repo>` (or `git submodule update --init --recursive`)
 4. Configure via `AppConfig.json`
-5. Execute `run_pvw.sh`
+5. Execute `run_pvw.sh` (the first run builds whisper.cpp, which takes a minute or two)
 6. Toggle capture by executing `toggle_pvw.sh`
+
+Manual build: `make build` produces `bin/gowhisper`; run it from the directory holding `AppConfig.json`. Use `make test` rather than `go test` so cgo finds whisper.cpp.
 
 ## Configuration
 
-Configure by updating the JSON values in the [AppConfig.json](https://github.com/tdupont750/PvWhisper/blob/main/AppConfig.json) file.
+Configure by updating the JSON values in the `AppConfig.json` file.
 
-Supported Outputs:
+Supported Outputs (case-insensitive):
 - `Console`
 - `Clipboard`
-- `ydotool`
+- `Ydotool`
 
-See source for [OutputTargets](https://github.com/tdupont750/PvWhisper/blob/main/src/PvWhisper/Config/OutputTarget.cs) and [ModelKinds](https://github.com/tdupont750/PvWhisper/blob/main/src/PvWhisper/Config/ModelKind.cs).
+Supported `modelType` values: `Tiny`, `Base`, `Small`, `Medium`, `Large`.
 
-Text transformations run in the order provided.
+`deviceName` is a case-insensitive substring of the input device name; `deviceIndex` is the fallback (`-1` is the system default).
+
+Text transformations run in the order provided. Regex rules use .NET-style syntax and may reference groups in `replace` as `{1}`, `{1:ToUpper}`, `{1:ToLower}`.
 
 ## Commands
 
@@ -94,7 +96,7 @@ sudo make install;
 # systemctl --user start ydotoold.service;
 ```
 
-The service requires root, so run `start_ydotool.sh` before starting PvWhisper
+The service requires root, so run `start_ydotoold.sh` before starting GoWhisper
 
 ### keyd
 
