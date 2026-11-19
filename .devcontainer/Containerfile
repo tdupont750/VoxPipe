@@ -1,3 +1,7 @@
+# Development container for working on VoxPipe with Claude Code. This is NOT how VoxPipe is
+# built or shipped; the app is built on the host with `make build` (see README.md).
+# Build: podman build -f .devcontainer/Containerfile -t voxpipe-dev .
+
 FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive

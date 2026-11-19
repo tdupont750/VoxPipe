@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Usage:
-#   ./run_voxpipe.sh
+#   ./scripts/run_voxpipe.sh
 #
 # Runs the prebuilt bin/voxpipe from the repo root, so AppConfig.json is found.
 # Build it first with: make build
@@ -12,8 +12,8 @@ DEBUG() { echo -e "\e[90m[SH] [DEBUG] $*\e[0m"; }
 WARN() { echo -e "\e[33m[SH] [WARN] $*\e[0m"; }
 ERROR() { echo -e "\e[31m[SH] [ERROR] $*\e[0m"; }
 
-# Directory of the currently executing script
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Repo root (this script lives in scripts/)
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 DEBUG "Using directory: $ROOT_DIR"
@@ -24,9 +24,15 @@ if [[ ! -x "$BINARY" ]]; then
   exit 1
 fi
 
+# First run: create the local config from the checked-in example
+if [[ ! -f "$ROOT_DIR/AppConfig.json" ]]; then
+  WARN "AppConfig.json not found, copying AppConfig.example.json. Review it (modelDir, deviceName, outputs)."
+  cp "$ROOT_DIR/AppConfig.example.json" "$ROOT_DIR/AppConfig.json"
+fi
+
 # Check ydotoold daemon is running
 if ! pgrep -x ydotoold &>/dev/null; then
-  WARN "ydotoold daemon is not running, start it with: ./start_ydotoold.sh"
+  WARN "ydotoold daemon is not running, start it with: ./scripts/start_ydotoold.sh"
 fi
 
 # Guard against concurrent instances

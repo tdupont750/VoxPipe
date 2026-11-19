@@ -126,13 +126,13 @@ func TestExpandPath(t *testing.T) {
 	}
 }
 
-func TestRepoAppConfigLoads(t *testing.T) {
+func TestExampleConfigLoads(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
-	cfg, err := LoadFile("../../AppConfig.json", nopLog{})
+	cfg, err := LoadFile("../../AppConfig.example.json", nopLog{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(cfg.TextTransforms) == 0 || len(cfg.Outputs) != 2 || cfg.Outputs[1] != OutputYdotool {
-		t.Errorf("unexpected repo config: %+v", cfg)
+		t.Errorf("unexpected example config: %+v", cfg)
 	}
 }

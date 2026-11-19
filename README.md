@@ -6,7 +6,7 @@ Built with [Go](https://go.dev), [whisper.cpp](https://github.com/ggml-org/whisp
 
 Why make yet another Speech-to-Text program? It was fun, I wanted it to run from a console, and it supports multiple outputs.
 
-![Clause](imgs/PvWhisper_small.png)
+![Clause](assets/logo.png)
 
 ## Features
 
@@ -37,10 +37,10 @@ Why make yet another Speech-to-Text program? It was fun, I wanted it to run from
 1. Install Go 1.24+ and build tools: `sudo apt install build-essential cmake libasound2-dev`
 2. Optional: ydotool and keyd (see sections below)
 3. Clone with submodules: `git clone --recurse-submodules <repo>` (or `git submodule update --init --recursive`)
-4. Configure via `AppConfig.json`
+4. Configure via `AppConfig.json`: copy `AppConfig.example.json` to `AppConfig.json` and edit it (`scripts/run_voxpipe.sh` does this copy for you on first run)
 5. Build with `make build` (the first build compiles whisper.cpp, which takes a minute or two)
-6. Execute `run_voxpipe.sh`, which runs the prebuilt `bin/voxpipe`
-7. Toggle capture by executing `toggle_voxpipe.sh`
+6. Execute `scripts/run_voxpipe.sh`, which runs the prebuilt `bin/voxpipe`
+7. Toggle capture by executing `scripts/toggle_voxpipe.sh`
 
 `make build` produces `bin/voxpipe`; you can also run it directly from the directory holding `AppConfig.json`. Use `make test` rather than `go test` so cgo finds whisper.cpp.
 
@@ -97,7 +97,7 @@ sudo make install;
 # systemctl --user start ydotoold.service;
 ```
 
-The service requires root, so run `start_ydotoold.sh` before starting VoxPipe
+The service requires root, so run `scripts/start_ydotoold.sh` before starting VoxPipe
 
 ### keyd
 
@@ -112,7 +112,7 @@ make && sudo make install
 sudo systemctl enable --now keyd
 ```
 
-My configuration (`/etc/keyd/default.conf`) remaps Caps Lock to a global shortcut that invokes toggle script (`toggle_voxpipe.sh`)
+My configuration (`/etc/keyd/default.conf`) remaps Caps Lock to a global shortcut that invokes toggle script (`scripts/toggle_voxpipe.sh`)
 
 ```
 [ids]

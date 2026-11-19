@@ -147,7 +147,7 @@ func Find() (string, error) {
 			return c, nil
 		}
 	}
-	return "", errors.New("AppConfig.json not found in current working directory or application directory")
+	return "", errors.New("AppConfig.json not found in current working directory or application directory (copy AppConfig.example.json to AppConfig.json)")
 }
 
 // Load finds and loads AppConfig.json.

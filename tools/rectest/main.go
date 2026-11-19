@@ -1,5 +1,5 @@
 // Command rectest records a few seconds from the configured device and writes a WAV file.
-// Manual check for the audio package: go run ./cmd/rectest -out /tmp/rec.wav
+// Manual check for the audio package: go run ./tools/rectest -out /tmp/rec.wav
 package main
 
 import (
