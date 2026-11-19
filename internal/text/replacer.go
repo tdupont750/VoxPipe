@@ -12,7 +12,7 @@ import (
 	"github.com/dlclark/regexp2"
 )
 
-// maxCachedPatterns bounds the pattern cache. Patterns come from AppConfig.json and are
+// maxCachedPatterns bounds the pattern cache. Patterns come from config.toml and are
 // fixed for the process lifetime, so the cap only guards against unbounded callers.
 const maxCachedPatterns = 64
 

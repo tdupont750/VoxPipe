@@ -36,7 +36,7 @@ Build prerequisites: Go 1.24+, `gcc`, `g++`, `cmake`, `make`, `libasound2-dev`.
 cmd/voxpipe/main.go     wiring (constructors, signal handling)
 tools/rectest/            manual recorder for the audio package
 internal/app/             command loop
-internal/config/          AppConfig.json load/validate, enums, ~ expansion
+internal/config/          config.toml load/validate, enums, ~ expansion
 internal/logging/         color logger, CAPTURING alert
 internal/text/            Replacer (regexp2), Transformer (ordered rules)
 internal/audio/           malgo capture, device resolver, WAV, capture timeout
@@ -55,15 +55,15 @@ assets/                   logo
 
 ## Configuration
 
-`AppConfig.json` is local and gitignored; `AppConfig.example.json` is the checked-in template (`run_voxpipe.sh` copies it on first run). Found in the current directory, then next to the binary:
+`config.toml` is local and gitignored; `config.example.toml` is the checked-in template (`run_voxpipe.sh` copies it on first run). Search order: `--config <path>`, `./config.toml`, `$XDG_CONFIG_HOME/voxpipe/config.toml`. Unknown keys are rejected (go-toml strict mode). Keys:
 - `outputs`: `Console`, `Clipboard`, `Ydotool` (case-insensitive)
 - `deviceIndex` / `deviceName`: name is a case-insensitive substring match, index is the fallback (-1 = system default)
 - `modelType`: `Tiny`, `Base`, `Small`, `Medium`, `Large` (Large downloads large-v3-turbo, saved as `ggml-large.bin`)
-- `modelDir`: model directory, `~` expanded, created if missing; models download from HuggingFace if absent
+- `modelDir`: model directory, `~` expanded, created if missing, default `$XDG_DATA_HOME/voxpipe/models`; models download from HuggingFace if absent
 - `httpPort`: enables the HTTP source when > 0
 - `captureTimeoutSeconds`: auto-stop after N seconds
 - `language`, `whisperThreads`, `frameLength`
-- `textTransforms`: ordered `{description, find, replace, isRegex, caseSensitive}`; `replace` supports `{N}`, `{N:ToUpper}`, `{N:ToLower}` (regexp2, .NET syntax, 1 s match timeout)
+- `[[textTransforms]]`: ordered tables of `description, find, replace, isRegex, caseSensitive` (use single-quoted literal strings for regexes); `replace` supports `{N}`, `{N:ToUpper}`, `{N:ToLower}` (regexp2, .NET syntax, 1 s match timeout)
 
 ## Notes and gotchas
 

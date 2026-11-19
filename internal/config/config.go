@@ -1,16 +1,21 @@
-// Package config loads and validates AppConfig.json.
+// Package config loads and validates config.toml.
 package config
 
 import (
-	"encoding/json"
+	"bytes"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/pelletier/go-toml/v2"
+
 	"voxpipe/internal/text"
 )
+
+// FileName is the config file name searched for in each location.
+const FileName = "config.toml"
 
 // ModelKind is the Whisper model size.
 type ModelKind string
@@ -25,8 +30,8 @@ const (
 
 var modelKinds = []ModelKind{ModelBase, ModelTiny, ModelSmall, ModelMedium, ModelLarge}
 
-func (m *ModelKind) UnmarshalJSON(b []byte) error {
-	v, err := parseEnum(b, modelKinds, "modelType")
+func (m *ModelKind) UnmarshalText(b []byte) error {
+	v, err := parseEnum(string(b), modelKinds, "modelType")
 	*m = v
 	return err
 }
@@ -42,51 +47,47 @@ const (
 
 var outputTargets = []OutputTarget{OutputConsole, OutputClipboard, OutputYdotool}
 
-func (o *OutputTarget) UnmarshalJSON(b []byte) error {
-	v, err := parseEnum(b, outputTargets, "outputs")
+func (o *OutputTarget) UnmarshalText(b []byte) error {
+	v, err := parseEnum(string(b), outputTargets, "outputs")
 	*o = v
 	return err
 }
 
-// parseEnum decodes a JSON string and matches it case-insensitively against the allowed values.
-func parseEnum[T ~string](b []byte, allowed []T, field string) (T, error) {
-	var zero T
-	var s string
-	if err := json.Unmarshal(b, &s); err != nil {
-		return zero, fmt.Errorf("%s: expected a string: %w", field, err)
-	}
+// parseEnum matches s case-insensitively against the allowed values.
+func parseEnum[T ~string](s string, allowed []T, field string) (T, error) {
 	for _, a := range allowed {
 		if strings.EqualFold(s, string(a)) {
 			return a, nil
 		}
 	}
+	var zero T
 	return zero, fmt.Errorf("%s: unknown value %q", field, s)
 }
 
-// AppConfig is the DTO for AppConfig.json. encoding/json matches keys case-insensitively.
+// AppConfig is the DTO for config.toml. Unknown keys are rejected so typos surface.
 type AppConfig struct {
 	// DeviceIndex of -1 (or unset) selects the system default device.
-	DeviceIndex *int   `json:"deviceIndex"`
-	DeviceName  string `json:"deviceName"`
-	HTTPPort    *int   `json:"httpPort"`
+	DeviceIndex *int   `toml:"deviceIndex"`
+	DeviceName  string `toml:"deviceName"`
+	HTTPPort    *int   `toml:"httpPort"`
 
-	Language  string    `json:"language"`
-	ModelType ModelKind `json:"modelType"`
-	// ModelDir is the directory where model files are stored/loaded.
-	ModelDir string `json:"modelDir"`
+	Language  string    `toml:"language"`
+	ModelType ModelKind `toml:"modelType"`
+	// ModelDir is where model files are stored/loaded. Defaults to the XDG data directory.
+	ModelDir string `toml:"modelDir"`
 
 	// WhisperThreads is the number of threads Whisper uses for inference.
-	WhisperThreads int `json:"whisperThreads"`
+	WhisperThreads int `toml:"whisperThreads"`
 	// FrameLength is the number of audio frames per read from the microphone.
-	FrameLength int `json:"frameLength"`
+	FrameLength int `toml:"frameLength"`
 
 	// TextTransforms are ordered rules applied to transcribed text.
-	TextTransforms []text.TransformConfig `json:"textTransforms"`
+	TextTransforms []text.TransformConfig `toml:"textTransforms"`
 
-	Outputs []OutputTarget `json:"outputs"`
+	Outputs []OutputTarget `toml:"outputs"`
 
 	// CaptureTimeoutSeconds is the max capture time before auto-stop.
-	CaptureTimeoutSeconds int `json:"captureTimeoutSeconds"`
+	CaptureTimeoutSeconds int `toml:"captureTimeoutSeconds"`
 }
 
 // HasHTTPSource reports whether the HTTP command source is enabled.
@@ -94,7 +95,7 @@ func (c *AppConfig) HasHTTPSource() bool {
 	return c.HTTPPort != nil && *c.HTTPPort > 0
 }
 
-// Defaults returns an AppConfig with the same defaults as the C# AppConfig class.
+// Defaults returns an AppConfig holding the built-in defaults.
 func Defaults() AppConfig {
 	return AppConfig{
 		Language:              "en",
@@ -132,30 +133,53 @@ func ExpandPath(path string) string {
 	return path
 }
 
-// Find locates AppConfig.json: first in the current directory, then next to the executable.
-func Find() (string, error) {
+// DefaultModelDir is $XDG_DATA_HOME/voxpipe/models, or ~/.local/share/voxpipe/models.
+func DefaultModelDir() (string, error) {
+	if x := os.Getenv("XDG_DATA_HOME"); filepath.IsAbs(x) {
+		return filepath.Join(x, "voxpipe", "models"), nil
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("find home directory for default modelDir: %w", err)
+	}
+	return filepath.Join(home, ".local", "share", "voxpipe", "models"), nil
+}
+
+// Find locates the config file. An explicit path (from --config) must exist. Otherwise the
+// search order is ./config.toml, then $XDG_CONFIG_HOME/voxpipe/config.toml
+// (~/.config/voxpipe/config.toml).
+func Find(explicit string) (string, error) {
+	if explicit != "" {
+		if _, err := os.Stat(explicit); err != nil {
+			return "", fmt.Errorf("config file: %w", err)
+		}
+		return explicit, nil
+	}
+
 	var candidates []string
 	if cwd, err := os.Getwd(); err == nil {
-		candidates = append(candidates, filepath.Join(cwd, "AppConfig.json"))
+		candidates = append(candidates, filepath.Join(cwd, FileName))
 	}
-	if exe, err := os.Executable(); err == nil {
-		candidates = append(candidates, filepath.Join(filepath.Dir(exe), "AppConfig.json"))
+	if dir, err := os.UserConfigDir(); err == nil {
+		candidates = append(candidates, filepath.Join(dir, "voxpipe", FileName))
 	}
 
 	for _, c := range candidates {
-		if _, err := os.Stat(c); err == nil {
+		if st, err := os.Stat(c); err == nil && !st.IsDir() {
 			return c, nil
 		}
 	}
-	return "", errors.New("AppConfig.json not found in current working directory or application directory (copy AppConfig.example.json to AppConfig.json)")
+	return "", fmt.Errorf("%s not found; looked in: %s (copy config.example.toml to one of these)",
+		FileName, strings.Join(candidates, ", "))
 }
 
-// Load finds and loads AppConfig.json.
-func Load(log Logger) (*AppConfig, error) {
-	path, err := Find()
+// Load finds and loads the config file; see Find for the search order.
+func Load(explicit string, log Logger) (*AppConfig, error) {
+	path, err := Find(explicit)
 	if err != nil {
 		return nil, err
 	}
+	log.Info("Using config: " + path)
 	return LoadFile(path, log)
 }
 
@@ -166,28 +190,41 @@ func LoadFile(path string, log Logger) (*AppConfig, error) {
 		return nil, err
 	}
 	if strings.TrimSpace(string(data)) == "" {
-		return nil, errors.New("AppConfig.json is empty")
+		return nil, fmt.Errorf("%s is empty", filepath.Base(path))
 	}
 
 	cfg := Defaults()
-	if err := json.Unmarshal(data, &cfg); err != nil {
-		return nil, fmt.Errorf("failed to parse AppConfig.json: %w", err)
+	dec := toml.NewDecoder(bytes.NewReader(data)).DisallowUnknownFields()
+	if err := dec.Decode(&cfg); err != nil {
+		var derr *toml.DecodeError
+		var serr *toml.StrictMissingError
+		switch {
+		case errors.As(err, &derr):
+			return nil, fmt.Errorf("parse %s:\n%s", path, derr.String())
+		case errors.As(err, &serr):
+			return nil, fmt.Errorf("parse %s:\n%s", path, serr.String())
+		}
+		return nil, fmt.Errorf("parse %s: %w", path, err)
 	}
 
-	if strings.TrimSpace(cfg.ModelDir) != "" {
-		full, err := filepath.Abs(ExpandPath(cfg.ModelDir))
-		if err != nil {
+	if strings.TrimSpace(cfg.ModelDir) == "" {
+		if cfg.ModelDir, err = DefaultModelDir(); err != nil {
+			return nil, err
+		}
+	}
+
+	full, err := filepath.Abs(ExpandPath(cfg.ModelDir))
+	if err != nil {
+		return nil, fmt.Errorf("invalid modelDir %q: %w", cfg.ModelDir, err)
+	}
+	if _, err := os.Stat(full); os.IsNotExist(err) {
+		log.Warn("Model directory does not exist: " + full)
+		if err := os.MkdirAll(full, 0o755); err != nil {
 			return nil, fmt.Errorf("invalid modelDir %q: %w", cfg.ModelDir, err)
 		}
-		if _, err := os.Stat(full); os.IsNotExist(err) {
-			log.Warn("Model directory does not exist: " + full)
-			if err := os.MkdirAll(full, 0o755); err != nil {
-				return nil, fmt.Errorf("invalid modelDir %q: %w", cfg.ModelDir, err)
-			}
-			log.Info("Created model directory: " + full)
-		}
-		cfg.ModelDir = full
+		log.Info("Created model directory: " + full)
 	}
+	cfg.ModelDir = full
 
 	return &cfg, nil
 }

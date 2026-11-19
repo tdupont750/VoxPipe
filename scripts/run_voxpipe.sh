@@ -4,7 +4,7 @@ set -euo pipefail
 # Usage:
 #   ./scripts/run_voxpipe.sh
 #
-# Runs the prebuilt bin/voxpipe from the repo root, so AppConfig.json is found.
+# Runs the prebuilt bin/voxpipe from the repo root, so config.toml is found.
 # Build it first with: make build
 
 INFO() { echo -e "\e[34m[SH] [INFO] $*\e[0m"; }
@@ -24,10 +24,11 @@ if [[ ! -x "$BINARY" ]]; then
   exit 1
 fi
 
-# First run: create the local config from the checked-in example
-if [[ ! -f "$ROOT_DIR/AppConfig.json" ]]; then
-  WARN "AppConfig.json not found, copying AppConfig.example.json. Review it (modelDir, deviceName, outputs)."
-  cp "$ROOT_DIR/AppConfig.example.json" "$ROOT_DIR/AppConfig.json"
+# First run: create ./config.toml from the checked-in example, unless a user config exists
+USER_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/voxpipe/config.toml"
+if [[ ! -f "$ROOT_DIR/config.toml" && ! -f "$USER_CONFIG" ]]; then
+  WARN "config.toml not found, copying config.example.toml. Review it (modelDir, deviceName, outputs)."
+  cp "$ROOT_DIR/config.example.toml" "$ROOT_DIR/config.toml"
 fi
 
 # Check ydotoold daemon is running
@@ -41,7 +42,7 @@ if pgrep -x voxpipe &>/dev/null; then
   exit 1
 fi
 
-# Configuration is read from AppConfig.json only.
+# Configuration is read from ./config.toml, then ~/.config/voxpipe/config.toml.
 set +e
 "$BINARY"
 EXIT_CODE=$?

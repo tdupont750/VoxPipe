@@ -7,13 +7,13 @@ import (
 	"github.com/dlclark/regexp2"
 )
 
-// TransformConfig is one ordered text transform rule from AppConfig.json.
+// TransformConfig is one ordered text transform rule from config.toml.
 type TransformConfig struct {
-	Description   string `json:"description"`
-	Find          string `json:"find"`
-	Replace       string `json:"replace"`
-	CaseSensitive bool   `json:"caseSensitive"`
-	IsRegex       bool   `json:"isRegex"`
+	Description   string `toml:"description"`
+	Find          string `toml:"find"`
+	Replace       string `toml:"replace"`
+	CaseSensitive bool   `toml:"caseSensitive"`
+	IsRegex       bool   `toml:"isRegex"`
 }
 
 // Transformer applies transform rules in order.

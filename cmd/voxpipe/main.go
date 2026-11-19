@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"os"
 	"os/signal"
@@ -25,15 +26,14 @@ func main() {
 }
 
 func run() int {
+	configPath := flag.String("config", "", "path to config.toml (default: ./config.toml, then ~/.config/voxpipe/config.toml)")
+	flag.Parse()
+
 	log := logging.NewStd()
 
-	cfg, err := config.Load(log)
+	cfg, err := config.Load(*configPath, log)
 	if err != nil {
 		log.Error("Configuration error: " + err.Error())
-		return 1
-	}
-	if cfg.ModelDir == "" {
-		log.Error("Model directory is required. Set 'modelDir' in AppConfig.json.")
 		return 1
 	}
 

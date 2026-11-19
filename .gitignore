@@ -3,7 +3,7 @@
 /build
 
 # Local runtime files
-/AppConfig.json
+/config.toml
 /models
 
 # Editors

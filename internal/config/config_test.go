@@ -3,7 +3,10 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+
+	"voxpipe/internal/text"
 )
 
 type nopLog struct{}
@@ -13,15 +16,26 @@ func (nopLog) Warn(string) {}
 
 func writeConfig(t *testing.T, body string) string {
 	t.Helper()
-	p := filepath.Join(t.TempDir(), "AppConfig.json")
+	p := filepath.Join(t.TempDir(), FileName)
 	if err := os.WriteFile(p, []byte(body), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	return p
 }
 
+// isolate points HOME and the XDG dirs at temp dirs so tests never touch the real ones.
+func isolate(t *testing.T) (home string) {
+	t.Helper()
+	home = t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, ".config"))
+	t.Setenv("XDG_DATA_HOME", filepath.Join(home, ".local", "share"))
+	return home
+}
+
 func TestLoadAppliesDefaults(t *testing.T) {
-	cfg, err := LoadFile(writeConfig(t, `{}`), nopLog{})
+	isolate(t)
+	cfg, err := LoadFile(writeConfig(t, "language = \"en\"\n"), nopLog{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,13 +51,30 @@ func TestLoadAppliesDefaults(t *testing.T) {
 	}
 }
 
+func TestLoadDefaultsModelDirToXDGData(t *testing.T) {
+	home := isolate(t)
+	cfg, err := LoadFile(writeConfig(t, "language = \"en\"\n"), nopLog{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := filepath.Join(home, ".local", "share", "voxpipe", "models")
+	if cfg.ModelDir != want {
+		t.Errorf("modelDir = %q, want %q", cfg.ModelDir, want)
+	}
+	if st, err := os.Stat(want); err != nil || !st.IsDir() {
+		t.Errorf("default model dir not created: %v", err)
+	}
+}
+
 func TestLoadParsesEnumsCaseInsensitively(t *testing.T) {
-	cfg, err := LoadFile(writeConfig(t, `{
-		"outputs": ["console", "ydotool", "CLIPBOARD"],
-		"modelType": "small",
-		"httpPort": 5042,
-		"deviceIndex": -1
-	}`), nopLog{})
+	isolate(t)
+	cfg, err := LoadFile(writeConfig(t, `
+outputs = ["console", "ydotool", "CLIPBOARD"]
+modelType = "small"
+httpPort = 5042
+deviceIndex = -1
+`), nopLog{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,25 +96,34 @@ func TestLoadParsesEnumsCaseInsensitively(t *testing.T) {
 	}
 }
 
-func TestLoadParsesTextTransforms(t *testing.T) {
-	cfg, err := LoadFile(writeConfig(t, `{"textTransforms": [
-		{"description": "d", "find": "a", "replace": "b", "caseSensitive": true, "isRegex": true}
-	]}`), nopLog{})
+func TestLoadTextTransformsKeepLiteralBackslashes(t *testing.T) {
+	isolate(t)
+	cfg, err := LoadFile(writeConfig(t, `
+[[textTransforms]]
+description = "d"
+find = '\b(gira)\b'
+replace = 'Jira'
+caseSensitive = true
+isRegex = true
+`), nopLog{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	got := cfg.TextTransforms[0]
-	if got.Find != "a" || got.Replace != "b" || !got.CaseSensitive || !got.IsRegex || got.Description != "d" {
+	if got.Find != `\b(gira)\b` || got.Replace != "Jira" || !got.CaseSensitive || !got.IsRegex || got.Description != "d" {
 		t.Errorf("got %+v", got)
 	}
 }
 
 func TestLoadRejectsBadInput(t *testing.T) {
+	isolate(t)
 	tests := map[string]string{
 		"empty":          "  \n",
-		"invalid json":   `{`,
-		"unknown model":  `{"modelType": "Huge"}`,
-		"unknown output": `{"outputs": ["Printer"]}`,
+		"invalid toml":   "outputs = [",
+		"unknown model":  `modelType = "Huge"`,
+		"unknown output": `outputs = ["Printer"]`,
+		"unknown key":    `modelTpye = "Base"`,
+		"wrong type":     `whisperThreads = "eight"`,
 	}
 	for name, body := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -94,9 +134,18 @@ func TestLoadRejectsBadInput(t *testing.T) {
 	}
 }
 
+func TestLoadUnknownKeyErrorNamesTheKey(t *testing.T) {
+	isolate(t)
+	_, err := LoadFile(writeConfig(t, `modelTpye = "Base"`), nopLog{})
+	if err == nil || !strings.Contains(err.Error(), "modelTpye") {
+		t.Errorf("got %v", err)
+	}
+}
+
 func TestLoadCreatesModelDir(t *testing.T) {
+	isolate(t)
 	dir := filepath.Join(t.TempDir(), "models", "nested")
-	cfg, err := LoadFile(writeConfig(t, `{"modelDir": "`+filepath.ToSlash(dir)+`"}`), nopLog{})
+	cfg, err := LoadFile(writeConfig(t, "modelDir = '"+dir+"'\n"), nopLog{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -126,13 +175,66 @@ func TestExpandPath(t *testing.T) {
 	}
 }
 
-func TestExampleConfigLoads(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
-	cfg, err := LoadFile("../../AppConfig.example.json", nopLog{})
+func TestFindSearchOrder(t *testing.T) {
+	home := isolate(t)
+	cwd := t.TempDir()
+	t.Chdir(cwd)
+
+	xdg := filepath.Join(home, ".config", "voxpipe")
+	if err := os.MkdirAll(xdg, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	xdgFile := filepath.Join(xdg, FileName)
+
+	if _, err := Find(""); err == nil || !strings.Contains(err.Error(), "config.example.toml") {
+		t.Errorf("missing config must hint at the example: %v", err)
+	}
+
+	os.WriteFile(xdgFile, []byte("x"), 0o644)
+	if got, err := Find(""); err != nil || got != xdgFile {
+		t.Errorf("xdg fallback: got %q, %v", got, err)
+	}
+
+	cwdFile := filepath.Join(cwd, FileName)
+	os.WriteFile(cwdFile, []byte("x"), 0o644)
+	if got, err := Find(""); err != nil || !samePath(t, got, cwdFile) {
+		t.Errorf("cwd must win over xdg: got %q, %v", got, err)
+	}
+
+	explicit := filepath.Join(t.TempDir(), "custom.toml")
+	os.WriteFile(explicit, []byte("x"), 0o644)
+	if got, err := Find(explicit); err != nil || got != explicit {
+		t.Errorf("explicit must win: got %q, %v", got, err)
+	}
+	if _, err := Find(filepath.Join(cwd, "nope.toml")); err == nil {
+		t.Error("explicit missing file must fail, not fall through")
+	}
+}
+
+func samePath(t *testing.T, a, b string) bool {
+	t.Helper()
+	ra, _ := filepath.EvalSymlinks(a)
+	rb, _ := filepath.EvalSymlinks(b)
+	return ra == rb
+}
+
+func TestExampleConfigLoadsAndRegexesCompile(t *testing.T) {
+	isolate(t)
+	cfg, err := LoadFile("../../config.example.toml", nopLog{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(cfg.TextTransforms) == 0 || len(cfg.Outputs) != 2 || cfg.Outputs[1] != OutputYdotool {
 		t.Errorf("unexpected example config: %+v", cfg)
+	}
+
+	r := text.NewReplacer()
+	for _, rule := range cfg.TextTransforms {
+		if !rule.IsRegex {
+			continue
+		}
+		if _, err := r.Replace("sample text", rule.Find, rule.Replace, 0); err != nil {
+			t.Errorf("rule %q does not compile: %v", rule.Description, err)
+		}
 	}
 }

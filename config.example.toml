@@ -1,0 +1,62 @@
+# VoxPipe configuration. Copy this file to config.toml and edit it.
+#
+# Search order: --config <path>, ./config.toml, ~/.config/voxpipe/config.toml
+
+# Where results go: "Console", "Clipboard", "Ydotool" (case-insensitive)
+outputs = ["Console", "Ydotool"]
+
+# Auto-stop a capture after this many seconds
+captureTimeoutSeconds = 60
+
+# Input device: deviceName is a case-insensitive substring of the device name and wins
+# when found; deviceIndex is the fallback (-1 = system default)
+deviceIndex = -1
+# deviceName = "USB Microphone"
+
+language = "en"
+
+# Whisper model: "Tiny", "Base", "Small", "Medium", "Large" (large-v3-turbo)
+modelType = "Base"
+# Where models live and are downloaded to. "~" is expanded; created if missing.
+# Default: ~/.local/share/voxpipe/models (or $XDG_DATA_HOME/voxpipe/models)
+# modelDir = "~/.local/share/voxpipe/models"
+
+# Enables the HTTP command source: curl -s -X POST http://localhost:5042/command/v
+httpPort = 5042
+
+whisperThreads = 8
+# Audio frames per microphone read
+frameLength = 512
+
+# Text transforms run in order after transcription. Use single-quoted (literal) strings
+# for regexes so backslashes need no escaping. Regexes use .NET syntax; "replace" may use
+# {1}, {1:ToUpper}, {1:ToLower} for capture groups.
+
+[[textTransforms]]
+description = "Capitalize first letter"
+find = '^(\w)'
+replace = '{1:ToUpper}'
+isRegex = true
+caseSensitive = false
+
+[[textTransforms]]
+description = "Add space at start of sentence"
+find = '^Space\s(\w)'
+replace = ' {1:ToUpper}'
+isRegex = true
+caseSensitive = false
+
+[[textTransforms]]
+description = "Replace backspace with ydotool token"
+find = '^Back\s?space\S?\s'
+replace = '{ydotool:KEY_BACKSPACE} '
+isRegex = true
+caseSensitive = false
+
+[[textTransforms]]
+description = "Remove whisper noise messages"
+find = '\[(\w|_)+\]'
+replace = ''
+isRegex = true
+caseSensitive = false
+

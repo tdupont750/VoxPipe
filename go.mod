@@ -12,4 +12,6 @@ require (
 
 require golang.org/x/sys v0.33.0
 
+require github.com/pelletier/go-toml/v2 v2.2.4
+
 replace github.com/ggerganov/whisper.cpp/bindings/go => ./third_party/whisper.cpp/bindings/go

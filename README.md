@@ -37,16 +37,18 @@ Why make yet another Speech-to-Text program? It was fun, I wanted it to run from
 1. Install Go 1.24+ and build tools: `sudo apt install build-essential cmake libasound2-dev`
 2. Optional: ydotool and keyd (see sections below)
 3. Clone with submodules: `git clone --recurse-submodules <repo>` (or `git submodule update --init --recursive`)
-4. Configure via `AppConfig.json`: copy `AppConfig.example.json` to `AppConfig.json` and edit it (`scripts/run_voxpipe.sh` does this copy for you on first run)
+4. Configure via `config.toml`: copy `config.example.toml` to `config.toml` and edit it (`scripts/run_voxpipe.sh` does this copy for you on first run)
 5. Build with `make build` (the first build compiles whisper.cpp, which takes a minute or two)
 6. Execute `scripts/run_voxpipe.sh`, which runs the prebuilt `bin/voxpipe`
 7. Toggle capture by executing `scripts/toggle_voxpipe.sh`
 
-`make build` produces `bin/voxpipe`; you can also run it directly from the directory holding `AppConfig.json`. Use `make test` rather than `go test` so cgo finds whisper.cpp.
+`make build` produces `bin/voxpipe`; you can also run it directly from the directory holding `config.toml`. Use `make test` rather than `go test` so cgo finds whisper.cpp.
 
 ## Configuration
 
-Configure by updating the JSON values in the `AppConfig.json` file.
+Configuration is a [TOML](https://toml.io) file. The search order is `--config <path>`, then `./config.toml`, then `~/.config/voxpipe/config.toml` (`$XDG_CONFIG_HOME`). `config.example.toml` documents every option; unknown keys are rejected so typos are caught at startup.
+
+Write regexes as single-quoted TOML literal strings so backslashes need no escaping: `find = '\b(gira)\b'`.
 
 Supported Outputs (case-insensitive):
 - `Console`
@@ -68,7 +70,7 @@ Console Commands:
 - `x` = stop capture and transcribe
 - `q` = quit
 
-Via HTTP (when `httpPort` is set in `AppConfig.json`):
+Via HTTP (when `httpPort` is set in `config.toml`):
 - `curl -s -X POST http://localhost:5042/command/v`   # toggle capture
 - `curl -s -X POST http://localhost:5042/command/q`   # quit
 
