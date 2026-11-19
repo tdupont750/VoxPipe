@@ -10,6 +10,6 @@ require (
 	golang.org/x/term v0.32.0
 )
 
-require golang.org/x/sys v0.33.0 // indirect
+require golang.org/x/sys v0.33.0
 
 replace github.com/ggerganov/whisper.cpp/bindings/go => ./third_party/whisper.cpp/bindings/go

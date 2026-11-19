@@ -17,7 +17,7 @@ const (
 	escSeqWindow = 25 * time.Millisecond
 )
 
-// Console reads single keypresses from stdin. On a terminal it switches to raw mode so no
+// Console reads single keypresses from stdin. On a terminal it switches to cbreak mode so no
 // Enter is needed, and restores the terminal on exit. On a pipe it reads characters as they come.
 type Console struct {
 	in io.Reader
@@ -28,11 +28,11 @@ func NewConsole() *Console { return &Console{in: os.Stdin, fd: int(os.Stdin.Fd()
 
 func (c *Console) Run(ctx context.Context, out chan<- rune) error {
 	if term.IsTerminal(c.fd) {
-		old, err := term.MakeRaw(c.fd)
+		restore, err := makeCbreak(c.fd)
 		if err != nil {
 			return err
 		}
-		defer func() { _ = term.Restore(c.fd, old) }()
+		defer restore()
 	}
 	return readKeys(ctx, c.in, out, escSeqWindow)
 }
