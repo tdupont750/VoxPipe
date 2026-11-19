@@ -11,7 +11,6 @@ RUN apt-get update && apt-get install -y \
     python3 \
     unzip \
     zip \
-    libicu74 \
     build-essential \
     cmake \
     pkg-config \
@@ -25,14 +24,6 @@ RUN apt-get update && apt-get install -y \
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
-
-# .NET SDK 10 — repo pins 10.0.100 in global.json. The Ubuntu 24.04 feed only ships
-# .NET 8 LTS, so install the pinned SDK via the official dotnet-install script, system-wide.
-RUN curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh \
-    && bash /tmp/dotnet-install.sh --version 10.0.100 --install-dir /usr/share/dotnet \
-    && ln -sf /usr/share/dotnet/dotnet /usr/local/bin/dotnet \
-    && rm -f /tmp/dotnet-install.sh
-ENV DOTNET_ROOT=/usr/share/dotnet
 
 # Go toolchain for the GoWhisper port. Ubuntu 24.04 ships Go 1.22, so install the
 # official tarball. build-essential/cmake/libasound2-dev above cover cgo (whisper.cpp, malgo).
@@ -86,10 +77,6 @@ USER claude
 ENV HOME=/home/claude
 ENV NPM_CONFIG_PREFIX=/home/claude/.npm-global
 ENV PATH=/home/claude/.npm-global/bin:$PATH
-ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
-ENV DOTNET_NOLOGO=1
-ENV DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
-ENV PATH=$PATH:/home/claude/.dotnet/tools
 ENV PATH=$PATH:/usr/local/go/bin:/home/claude/go/bin
 ENV CGO_ENABLED=1
 WORKDIR /workspace
