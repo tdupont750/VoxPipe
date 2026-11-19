@@ -37,7 +37,7 @@ func readWavSamples(t *testing.T, path string) []int16 {
 
 // TestSmokeJFK transcribes the whisper.cpp JFK sample. Skipped when the model is absent.
 func TestSmokeJFK(t *testing.T) {
-	model := filepath.Join("..", "..", "WhisperModels", ModelFileName(config.ModelBase))
+	model := filepath.Join("..", "..", "models", ModelFileName(config.ModelBase))
 	if _, err := os.Stat(model); err != nil {
 		t.Skipf("model not present: %v", err)
 	}
