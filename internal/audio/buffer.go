@@ -47,3 +47,12 @@ func (b *sampleBuffer) reset() {
 	}
 	b.samples = b.samples[:0]
 }
+
+// PCM16ToFloat32 converts PCM16 samples to the [-1, 1) float32 range whisper.cpp expects.
+func PCM16ToFloat32(samples []int16) []float32 {
+	out := make([]float32, len(samples))
+	for i, s := range samples {
+		out[i] = float32(s) / 32768.0
+	}
+	return out
+}

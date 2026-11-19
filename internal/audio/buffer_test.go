@@ -57,3 +57,13 @@ func TestBufferDropsOversizedBackingArray(t *testing.T) {
 		t.Errorf("cap = %d, want %d", cap(b.samples), b.capacity)
 	}
 }
+
+func TestPCM16ToFloat32(t *testing.T) {
+	got := PCM16ToFloat32([]int16{0, 16384, -32768, 32767})
+	want := []float32{0, 0.5, -1, 32767.0 / 32768.0}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Errorf("[%d] = %v, want %v", i, got[i], want[i])
+		}
+	}
+}
