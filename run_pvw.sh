@@ -4,7 +4,8 @@ set -euo pipefail
 # Usage:
 #   ./run_pvw.sh
 #
-# Builds (if needed) and runs bin/gowhisper from the repo root, so AppConfig.json is found.
+# Runs the prebuilt bin/gowhisper from the repo root, so AppConfig.json is found.
+# Build it first with: make build
 
 INFO() { echo -e "\e[34m[SH] [INFO] $*\e[0m"; }
 DEBUG() { echo -e "\e[90m[SH] [DEBUG] $*\e[0m"; }
@@ -17,12 +18,11 @@ cd "$ROOT_DIR"
 
 DEBUG "Using directory: $ROOT_DIR"
 
-for tool in go make cmake; do
-  if ! command -v "$tool" &>/dev/null; then
-    ERROR "$tool is not installed or not in PATH"
-    exit 1
-  fi
-done
+BINARY="$ROOT_DIR/bin/gowhisper"
+if [[ ! -x "$BINARY" ]]; then
+  ERROR "$BINARY not found or not executable. Build it first with: make build"
+  exit 1
+fi
 
 # Check ydotoold daemon is running
 if ! pgrep -x ydotoold &>/dev/null; then
@@ -35,12 +35,9 @@ if pgrep -x gowhisper &>/dev/null; then
   exit 1
 fi
 
-INFO "Building..."
-make build
-
 # Configuration is read from AppConfig.json only.
 set +e
-./bin/gowhisper
+"$BINARY"
 EXIT_CODE=$?
 set -e
 

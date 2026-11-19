@@ -15,7 +15,7 @@ git submodule update --init --recursive   # first clone only
 make build      # builds libwhisper if needed, then bin/gowhisper
 make test       # go test ./...
 make vet        # go vet ./...
-./run_pvw.sh    # build + run (reads ./AppConfig.json)
+./run_pvw.sh    # run prebuilt bin/gowhisper (requires make build first)
 ./toggle_pvw.sh # POST /command/v to the HTTP source (default port 5042)
 
 # Single test

@@ -38,10 +38,11 @@ Why make yet another Speech-to-Text program? It was fun, I wanted it to run from
 2. Optional: ydotool and keyd (see sections below)
 3. Clone with submodules: `git clone --recurse-submodules <repo>` (or `git submodule update --init --recursive`)
 4. Configure via `AppConfig.json`
-5. Execute `run_pvw.sh` (the first run builds whisper.cpp, which takes a minute or two)
-6. Toggle capture by executing `toggle_pvw.sh`
+5. Build with `make build` (the first build compiles whisper.cpp, which takes a minute or two)
+6. Execute `run_pvw.sh`, which runs the prebuilt `bin/gowhisper`
+7. Toggle capture by executing `toggle_pvw.sh`
 
-Manual build: `make build` produces `bin/gowhisper`; run it from the directory holding `AppConfig.json`. Use `make test` rather than `go test` so cgo finds whisper.cpp.
+`make build` produces `bin/gowhisper`; you can also run it directly from the directory holding `AppConfig.json`. Use `make test` rather than `go test` so cgo finds whisper.cpp.
 
 ## Configuration
 
