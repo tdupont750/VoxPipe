@@ -31,14 +31,47 @@ if [[ ! -f "$ROOT_DIR/config.toml" && ! -f "$USER_CONFIG" ]]; then
   cp "$ROOT_DIR/config.example.toml" "$ROOT_DIR/config.toml"
 fi
 
+# Terminal state, captured before voxpipe puts stdin in cbreak mode. If it is killed before
+# restoring it, anything that prompts afterwards (sudo) reads a mangled line.
+TTY_STATE=""
+if [[ -t 0 ]]; then
+  TTY_STATE="$(stty -g 2>/dev/null || true)"
+fi
+
 # Check ydotoold daemon is running; offer to start it (needs sudo)
 YDOTOOLD_PID=""
+SUDO_KEEPALIVE_PID=""
+VOX_PID=""
+
 cleanup() {
+  # Disarm first: without this, a Ctrl-C during the sudo prompt below re-enters cleanup and loops.
+  trap - EXIT INT TERM
+
+  # Reap voxpipe before touching the terminal or prompting, so it is not still reading stdin.
+  if [[ -n "$VOX_PID" ]] && kill -0 "$VOX_PID" 2>/dev/null; then
+    kill -TERM "$VOX_PID" 2>/dev/null || true
+    wait "$VOX_PID" 2>/dev/null || true
+  fi
+  VOX_PID=""
+
+  if [[ -n "$TTY_STATE" ]]; then
+    stty "$TTY_STATE" 2>/dev/null || stty sane 2>/dev/null || true
+  fi
+
+  if [[ -n "$SUDO_KEEPALIVE_PID" ]]; then
+    kill "$SUDO_KEEPALIVE_PID" 2>/dev/null || true
+    wait "$SUDO_KEEPALIVE_PID" 2>/dev/null || true
+    SUDO_KEEPALIVE_PID=""
+  fi
+
   if [[ -n "$YDOTOOLD_PID" ]]; then
     DEBUG "Stopping ydotoold (pid $YDOTOOLD_PID)"
-    sudo kill "$YDOTOOLD_PID" 2>/dev/null || true
+    if ! sudo -n kill "$YDOTOOLD_PID"; then
+      WARN "Could not stop ydotoold without re-authenticating. Stop it with: sudo kill $YDOTOOLD_PID"
+    fi
   fi
 }
+trap cleanup EXIT INT TERM
 
 if ! pgrep -x ydotoold &>/dev/null; then
   ANSWER="n"
@@ -50,16 +83,25 @@ if ! pgrep -x ydotoold &>/dev/null; then
 
   if [[ "$ANSWER" =~ ^[Yy]$ ]]; then
     sudo -v || { ERROR "sudo authentication failed"; exit 1; }
+
+    # Keep the sudo timestamp warm so the kill in cleanup never has to prompt.
+    ( while kill -0 "$$" 2>/dev/null; do sudo -n true 2>/dev/null || exit 0; sleep 50; done ) &
+    SUDO_KEEPALIVE_PID=$!
+
     sudo env YDOTOOL_SOCKET=/tmp/.ydotool_socket \
       ydotoold --socket-own="$(id -u):$(id -g)" &
     YDOTOOLD_PID=$!
-    trap cleanup EXIT INT TERM
 
     for _ in {1..50}; do
       [[ -S /tmp/.ydotool_socket ]] && break
       sleep 0.1
     done
     if [[ -S /tmp/.ydotool_socket ]]; then
+      # $! is sudo's pid; it usually execs through to ydotoold, but not when sudo forks.
+      REAL_PID="$(pgrep -x ydotoold | head -1 || true)"
+      if [[ -n "$REAL_PID" ]]; then
+        YDOTOOLD_PID="$REAL_PID"
+      fi
       DEBUG "ydotoold ready (pid $YDOTOOLD_PID)"
     else
       ERROR "ydotoold socket /tmp/.ydotool_socket never appeared"
@@ -78,9 +120,12 @@ fi
 
 # Configuration is read from ./config.toml, then ~/.config/voxpipe/config.toml.
 set +e
-"$BINARY"
+"$BINARY" &
+VOX_PID=$!
+wait "$VOX_PID"
 EXIT_CODE=$?
 set -e
+VOX_PID=""
 
 DEBUG "VoxPipe exited with code: $EXIT_CODE"
 INFO "Done!"
