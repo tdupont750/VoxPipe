@@ -44,7 +44,8 @@ if ! pgrep -x ydotoold &>/dev/null; then
   ANSWER="n"
   if [[ -t 0 ]]; then
     WARN "ydotoold daemon is not running."
-    read -r -p "$(echo -e "\e[33m[SH] [WARN] Start it now with sudo? [y/N] \e[0m")" ANSWER
+    read -r -n 1 -p "$(echo -e "\e[33m[SH] [WARN] Start it now with sudo? [y/N] \e[0m")" ANSWER
+    echo
   fi
 
   if [[ "$ANSWER" =~ ^[Yy]$ ]]; then
