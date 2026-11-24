@@ -31,9 +31,42 @@ if [[ ! -f "$ROOT_DIR/config.toml" && ! -f "$USER_CONFIG" ]]; then
   cp "$ROOT_DIR/config.example.toml" "$ROOT_DIR/config.toml"
 fi
 
-# Check ydotoold daemon is running
+# Check ydotoold daemon is running; offer to start it (needs sudo)
+YDOTOOLD_PID=""
+cleanup() {
+  if [[ -n "$YDOTOOLD_PID" ]]; then
+    DEBUG "Stopping ydotoold (pid $YDOTOOLD_PID)"
+    sudo kill "$YDOTOOLD_PID" 2>/dev/null || true
+  fi
+}
+
 if ! pgrep -x ydotoold &>/dev/null; then
-  WARN "ydotoold daemon is not running, start it with: ./scripts/start_ydotoold.sh"
+  ANSWER="n"
+  if [[ -t 0 ]]; then
+    WARN "ydotoold daemon is not running."
+    read -r -p "$(echo -e "\e[33m[SH] [WARN] Start it now with sudo? [y/N] \e[0m")" ANSWER
+  fi
+
+  if [[ "$ANSWER" =~ ^[Yy]$ ]]; then
+    sudo -v || { ERROR "sudo authentication failed"; exit 1; }
+    sudo env YDOTOOL_SOCKET=/tmp/.ydotool_socket \
+      ydotoold --socket-own="$(id -u):$(id -g)" &
+    YDOTOOLD_PID=$!
+    trap cleanup EXIT INT TERM
+
+    for _ in {1..50}; do
+      [[ -S /tmp/.ydotool_socket ]] && break
+      sleep 0.1
+    done
+    if [[ -S /tmp/.ydotool_socket ]]; then
+      DEBUG "ydotoold ready (pid $YDOTOOLD_PID)"
+    else
+      ERROR "ydotoold socket /tmp/.ydotool_socket never appeared"
+      exit 1
+    fi
+  else
+    WARN "Continuing without ydotoold; start it with: ./scripts/start_ydotoold.sh"
+  fi
 fi
 
 # Guard against concurrent instances

@@ -99,7 +99,7 @@ sudo make install;
 # systemctl --user start ydotoold.service;
 ```
 
-The service requires root, so run `scripts/start_ydotoold.sh` before starting VoxPipe
+The service requires root. Either run `scripts/start_ydotoold.sh` before starting VoxPipe, or let `scripts/run_voxpipe.sh` offer to start it with sudo (it then stops the daemon on exit).
 
 ### keyd
 
