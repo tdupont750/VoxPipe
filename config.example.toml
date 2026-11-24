@@ -25,7 +25,9 @@ modelType = "Base"
 # Enables the HTTP command source: curl -s -X POST http://localhost:5042/command/v
 httpPort = 5042
 
-whisperThreads = 8
+# Inference threads. Tune per machine: on a 12C/14T Core Ultra 7 155U, encode time
+# plateaus at 10-12 and regresses at 14. Built-in default is 8.
+whisperThreads = 10
 # Audio frames per microphone read
 frameLength = 512
 
