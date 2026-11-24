@@ -37,7 +37,10 @@ fi
 
 # Check the ydotoold daemon is running; offer to start it (needs sudo). It is left running
 # after voxpipe exits, same as when started by hand with scripts/start_ydotoold.sh.
-if ! pgrep -x ydotoold &>/dev/null; then
+YDOTOOLD_PID="$(pgrep -x ydotoold | head -1 || true)"
+if [[ -n "$YDOTOOLD_PID" ]]; then
+  DEBUG "ydotoold already running (pid $YDOTOOLD_PID)"
+else
   ANSWER="n"
   if [[ -t 0 ]]; then
     WARN "ydotoold daemon is not running."
