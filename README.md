@@ -6,7 +6,7 @@ Built with [Go](https://go.dev), [whisper.cpp](https://github.com/ggml-org/whisp
 
 Why make yet another Speech-to-Text program? It was fun, I wanted it to run from a console, and it supports multiple outputs.
 
-![Clause](assets/logo_small.png)
+![VoxPipe](assets/logo_small.png)
 
 ## Features
 
@@ -132,4 +132,6 @@ capslock = capslock
 
 ## License
 
-Released under the GNU General Public License v3.0.
+Copyright (C) 2025-2026 tdupont750
+
+Released under the GNU General Public License v3.0. See [LICENSE](LICENSE).
