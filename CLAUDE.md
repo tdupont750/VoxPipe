@@ -43,7 +43,7 @@ internal/audio/           malgo capture, device resolver, WAV, capture timeout
 internal/transcribe/      model download, whisper.cpp inference
 internal/input/           console + HTTP command sources, fan-in
 internal/output/          dispatcher, console/clipboard/ydotool publishers
-third_party/whisper.cpp   submodule, pinned to v1.9.5
+third_party/whisper.cpp   submodule, pinned to v1.9.6
 scripts/                  run, toggle (HTTP) and ydotoold helper scripts
 assets/                   logo
 .devcontainer/            Containerfile for the Claude dev container (not the app build)
