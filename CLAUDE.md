@@ -70,5 +70,5 @@ assets/                   logo
 - Capture timeout discards the audio (matches the C# behavior). `transcribeOnTimeout` in `internal/app/app.go` flips it.
 - Passing a segment callback to the whisper.cpp Go bindings forces single-segment mode; `transcribe` reads segments with `NextSegment()` instead.
 - Console source puts the terminal in raw mode; Ctrl-C is mapped to quit, escape sequences (arrows) are swallowed.
-- Clipboard needs `wl-copy`, `xclip` or `xsel`. Ydotool needs the `ydotoold` socket at `/tmp/.ydotool_socket` (`start_ydotoold.sh`, or `run_voxpipe.sh` prompts to start it under sudo when a tty is attached and reaps it via trap).
+- Clipboard needs `wl-copy`, `xclip` or `xsel`. Ydotool needs the `ydotoold` socket at `/tmp/.ydotool_socket` (`start_ydotoold.sh`, or `run_voxpipe.sh` prompts to start it under sudo when a tty is attached; the daemon is left running afterwards).
 - Design: constructor injection, small consumer-side interfaces, no package-level state.
