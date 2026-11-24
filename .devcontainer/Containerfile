@@ -20,9 +20,6 @@ RUN apt-get update && apt-get install -y \
     pkg-config \
     libasound2-dev \
     sudo \
-    postgresql \
-    postgresql-client \
-    sudo \
     && rm -rf /var/lib/apt/lists/*
 
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
@@ -34,28 +31,6 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
 ARG GO_VERSION=1.24.5
 RUN arch="$(dpkg --print-architecture)" \
     && curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-${arch}.tar.gz" | tar -xz -C /usr/local
-
-# AWS CLI v2 — deploy workflow uses `aws s3 cp`, the CloudFront prefix-list lookup, and
-# provides the credentials `cdk deploy` reaches AWS with. (uname -m → x86_64 | aarch64.)
-RUN ARCH=$(uname -m) \
-    && curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-${ARCH}.zip" -o /tmp/awscliv2.zip \
-    && unzip -q /tmp/awscliv2.zip -d /tmp \
-    && /tmp/aws/install \
-    && rm -rf /tmp/aws /tmp/awscliv2.zip
-
-# SSM Session Manager plugin — production RDS is private (PRIVATE_ISOLATED subnet, no
-# public access). The only way to reach it is an SSM port-forward through the app EC2 box
-# (`aws ssm start-session ... AWS-StartPortForwardingSessionToRemoteHost`), then psql over
-# the tunnel. The plugin is required for any interactive `aws ssm start-session`.
-# (uname -m → x86_64 maps to ubuntu_64bit, aarch64 → ubuntu_arm64.)
-RUN case "$(uname -m)" in \
-        x86_64) SSM_ARCH=ubuntu_64bit ;; \
-        aarch64) SSM_ARCH=ubuntu_arm64 ;; \
-        *) echo "unsupported arch $(uname -m)" >&2; exit 1 ;; \
-    esac \
-    && curl -fsSL "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/${SSM_ARCH}/session-manager-plugin.deb" -o /tmp/session-manager-plugin.deb \
-    && dpkg -i /tmp/session-manager-plugin.deb \
-    && rm -f /tmp/session-manager-plugin.deb
 
 RUN arch="$(dpkg --print-architecture)" \
     && case "$arch" in amd64) larch=x86_64 ;; arm64) larch=arm64 ;; *) echo "unsupported arch: $arch" >&2; exit 1 ;; esac \
@@ -85,7 +60,7 @@ ENV PATH=$PATH:/usr/local/go/bin:/home/claude/go/bin
 ENV CGO_ENABLED=1
 WORKDIR /workspace
 
-RUN npm install -g @anthropic-ai/claude-code aws-cdk
+RUN npm install -g @anthropic-ai/claude-code
 
 # CLAUSE_ARGS is set by the clause wrapper at launch to the resolved args
 # (the line `clause status` shows as launch:); empty or unset means bare claude
