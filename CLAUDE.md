@@ -16,7 +16,7 @@ make build      # builds libwhisper if needed, then bin/voxpipe
 make test       # go test ./...
 make vet        # go vet ./...
 ./scripts/run_voxpipe.sh    # run prebuilt bin/voxpipe (requires make build first)
-./scripts/toggle_voxpipe.sh # POST /command/v to the HTTP source (default port 5042)
+./scripts/toggle_voxpipe.sh [port] [command] # POST to the HTTP source (defaults: 5042, v)
 
 # Single test
 make libwhisper && C_INCLUDE_PATH=$PWD/third_party/whisper.cpp/include:$PWD/third_party/whisper.cpp/ggml/include \
