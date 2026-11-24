@@ -6,7 +6,7 @@ Built with [Go](https://go.dev), [whisper.cpp](https://github.com/ggml-org/whisp
 
 Why make yet another Speech-to-Text program? It was fun, I wanted it to run from a console, and it supports multiple outputs.
 
-![Clause](assets/logo.png)
+![Clause](assets/logo_small.png)
 
 ## Features
 
