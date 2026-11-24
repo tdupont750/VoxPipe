@@ -7,6 +7,7 @@ import (
 	"io"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/ggerganov/whisper.cpp/bindings/go/pkg/whisper"
 
@@ -53,6 +54,8 @@ func (t *Transcriber) Transcribe(ctx context.Context, samples []int16) (string, 
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
+	start := time.Now()
+
 	wctx, err := t.model.NewContext()
 	if err != nil {
 		return "", fmt.Errorf("new whisper context: %w", err)
@@ -87,6 +90,11 @@ func (t *Transcriber) Transcribe(ctx context.Context, samples []int16) (string, 
 	}
 
 	raw := strings.TrimSpace(strings.Join(parts, " "))
+
+	elapsed := time.Since(start)
+	audioSec := float64(len(samples)) / audio.SampleRate
+	t.log.Info(fmt.Sprintf("Transcribed %.0f ms of audio in %.0f ms (%.2fx realtime).",
+		audioSec*1000, float64(elapsed.Microseconds())/1000, audioSec/elapsed.Seconds()))
 
 	// Transforms run here so callers stay decoupled; a failing rule is skipped and logged.
 	out, err := t.transformer.Transform(raw)
