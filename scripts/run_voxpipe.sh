@@ -41,18 +41,10 @@ fi
 # Check ydotoold daemon is running; offer to start it (needs sudo)
 YDOTOOLD_PID=""
 SUDO_KEEPALIVE_PID=""
-VOX_PID=""
 
 cleanup() {
   # Disarm first: without this, a Ctrl-C during the sudo prompt below re-enters cleanup and loops.
   trap - EXIT INT TERM
-
-  # Reap voxpipe before touching the terminal or prompting, so it is not still reading stdin.
-  if [[ -n "$VOX_PID" ]] && kill -0 "$VOX_PID" 2>/dev/null; then
-    kill -TERM "$VOX_PID" 2>/dev/null || true
-    wait "$VOX_PID" 2>/dev/null || true
-  fi
-  VOX_PID=""
 
   if [[ -n "$TTY_STATE" ]]; then
     stty "$TTY_STATE" 2>/dev/null || stty sane 2>/dev/null || true
@@ -120,12 +112,9 @@ fi
 
 # Configuration is read from ./config.toml, then ~/.config/voxpipe/config.toml.
 set +e
-"$BINARY" &
-VOX_PID=$!
-wait "$VOX_PID"
+"$BINARY"
 EXIT_CODE=$?
 set -e
-VOX_PID=""
 
 DEBUG "VoxPipe exited with code: $EXIT_CODE"
 INFO "Done!"
