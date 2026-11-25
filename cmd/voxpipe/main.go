@@ -11,14 +11,14 @@ import (
 	"syscall"
 	"time"
 
-	"voxpipe/internal/app"
-	"voxpipe/internal/audio"
-	"voxpipe/internal/config"
-	"voxpipe/internal/input"
-	"voxpipe/internal/logging"
-	"voxpipe/internal/output"
-	"voxpipe/internal/text"
-	"voxpipe/internal/transcribe"
+	"github.com/tdupont750/VoxPipe/internal/app"
+	"github.com/tdupont750/VoxPipe/internal/audio"
+	"github.com/tdupont750/VoxPipe/internal/config"
+	"github.com/tdupont750/VoxPipe/internal/input"
+	"github.com/tdupont750/VoxPipe/internal/logging"
+	"github.com/tdupont750/VoxPipe/internal/output"
+	"github.com/tdupont750/VoxPipe/internal/text"
+	"github.com/tdupont750/VoxPipe/internal/transcribe"
 )
 
 func main() {

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"voxpipe/internal/config"
-	"voxpipe/internal/text"
+	"github.com/tdupont750/VoxPipe/internal/config"
+	"github.com/tdupont750/VoxPipe/internal/text"
 )
 
 // readWavSamples extracts PCM16 samples from the data chunk of a 16 kHz mono WAV.

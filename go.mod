@@ -1,4 +1,4 @@
-module voxpipe
+module github.com/tdupont750/VoxPipe
 
 go 1.24.5
 

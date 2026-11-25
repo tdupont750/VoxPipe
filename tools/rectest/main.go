@@ -8,8 +8,8 @@ import (
 	"os"
 	"time"
 
-	"voxpipe/internal/audio"
-	"voxpipe/internal/logging"
+	"github.com/tdupont750/VoxPipe/internal/audio"
+	"github.com/tdupont750/VoxPipe/internal/logging"
 )
 
 func main() {

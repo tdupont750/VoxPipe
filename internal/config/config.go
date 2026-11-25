@@ -11,7 +11,7 @@ import (
 
 	"github.com/pelletier/go-toml/v2"
 
-	"voxpipe/internal/text"
+	"github.com/tdupont750/VoxPipe/internal/text"
 )
 
 // FileName is the config file name searched for in each location.

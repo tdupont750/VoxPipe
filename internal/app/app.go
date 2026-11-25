@@ -9,7 +9,7 @@ import (
 	"time"
 	"unicode"
 
-	"voxpipe/internal/audio"
+	"github.com/tdupont750/VoxPipe/internal/audio"
 )
 
 const (

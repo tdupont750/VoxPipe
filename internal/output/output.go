@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io"
 
-	"voxpipe/internal/config"
+	"github.com/tdupont750/VoxPipe/internal/config"
 )
 
 // Logger is the subset of logging.Logger used here.

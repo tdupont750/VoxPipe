@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"voxpipe/internal/text"
+	"github.com/tdupont750/VoxPipe/internal/text"
 )
 
 type nopLog struct{}

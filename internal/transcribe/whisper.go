@@ -11,8 +11,8 @@ import (
 
 	"github.com/ggerganov/whisper.cpp/bindings/go/pkg/whisper"
 
-	"voxpipe/internal/audio"
-	"voxpipe/internal/text"
+	"github.com/tdupont750/VoxPipe/internal/audio"
+	"github.com/tdupont750/VoxPipe/internal/text"
 )
 
 // Transcriber runs whisper.cpp inference. The model is loaded once; each call gets its own context.

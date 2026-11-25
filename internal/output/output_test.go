@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"voxpipe/internal/config"
+	"github.com/tdupont750/VoxPipe/internal/config"
 )
 
 type recLog struct{ lines []string }
