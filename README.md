@@ -42,7 +42,7 @@ Why make yet another Speech-to-Text program? It was fun, I wanted it to run from
 6. Execute `scripts/run_voxpipe.sh`, which runs the prebuilt `bin/voxpipe`
 7. Toggle capture by executing `scripts/toggle_voxpipe.sh`
 
-`make build` produces `bin/voxpipe`; you can also run it directly from the directory holding `config.toml`. Use `make test` rather than `go test` so cgo finds whisper.cpp.
+`make build` produces `bin/voxpipe`; you can also run it directly from the directory holding `config.toml`. Use `make test` rather than `go test` so cgo finds whisper.cpp; `make test-race`, `make vet` and `make lint` are what CI runs.
 
 ## Configuration
 

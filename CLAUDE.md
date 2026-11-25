@@ -14,7 +14,10 @@ whisper.cpp is a git submodule built into `build/whisper`. Always go through `ma
 git submodule update --init --recursive   # first clone only
 make build      # builds libwhisper if needed, then bin/voxpipe
 make test       # go test ./...
+make test-race  # go test -race ./... (CI runs this; the shared capture state needs it)
 make vet        # go vet ./...
+make lint       # golangci-lint run ./... (config in .golangci.yml)
+make fmt-check  # fail if gofmt would change anything; make fmt rewrites
 ./scripts/run_voxpipe.sh    # run prebuilt bin/voxpipe (requires make build first)
 ./scripts/toggle_voxpipe.sh [port] [command] # POST to the HTTP source (defaults: 5042, v)
 
@@ -67,6 +70,7 @@ assets/                   logo
 
 ## Notes and gotchas
 
+- Model downloads are verified against the SHA-256 digests pinned in `modelChecksums` (`internal/transcribe/model.go`). If HuggingFace republishes a model the download fails until that map is updated; the sums are the `x-linked-etag` HuggingFace serves for each file.
 - Capture timeout discards the audio (matches the C# behavior). `transcribeOnTimeout` in `internal/app/app.go` flips it.
 - Passing a segment callback to the whisper.cpp Go bindings forces single-segment mode; `transcribe` reads segments with `NextSegment()` instead.
 - Console source puts the terminal in raw mode; Ctrl-C is mapped to quit, escape sequences (arrows) are swallowed.
