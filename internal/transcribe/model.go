@@ -3,18 +3,48 @@ package transcribe
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"hash"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
-	"voxpipe/internal/config"
+	"github.com/tdupont750/VoxPipe/internal/config"
 )
 
 const defaultModelBaseURL = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/"
+
+// modelChecksums pins the SHA-256 of each model file published by the whisper.cpp HuggingFace
+// repo, so a corrupt or substituted download is never saved as a usable model. The values are
+// the LFS object ids HuggingFace serves as x-linked-etag for the files in remoteFileName.
+// If a model is ever republished upstream, the download fails until this map is updated.
+var modelChecksums = map[config.ModelKind]string{
+	config.ModelTiny:   "be07e048e1e599ad46341c8d2a135645097a538221678b7acdd1b1919c6e1b21",
+	config.ModelBase:   "60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe",
+	config.ModelSmall:  "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b",
+	config.ModelMedium: "6c14d5adee5f86394037b4e4e8b59f1673b6cee10e3cf0b11bbdbee79c156208",
+	config.ModelLarge:  "1fc70f774d38eb169993ac391eea357ef47c88757ef72ee5943879b7e8e2bc69",
+}
+
+// newDownloadClient returns a client with no overall deadline, since a model is up to ~1.6 GB
+// on a slow link, but with per-stage timeouts so a stalled connection cannot hang forever.
+func newDownloadClient() *http.Client {
+	return &http.Client{
+		Transport: &http.Transport{
+			DialContext:           (&net.Dialer{Timeout: 10 * time.Second}).DialContext,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ResponseHeaderTimeout: 30 * time.Second,
+			IdleConnTimeout:       30 * time.Second,
+		},
+	}
+}
 
 // Logger is the subset of logging.Logger used here.
 type Logger interface {
@@ -51,13 +81,19 @@ func remoteFileName(kind config.ModelKind) string {
 
 // ModelEnsurer makes sure a model file exists locally, downloading it if missing.
 type ModelEnsurer struct {
-	log     Logger
-	client  *http.Client
-	baseURL string
+	log       Logger
+	client    *http.Client
+	baseURL   string
+	checksums map[config.ModelKind]string
 }
 
 func NewModelEnsurer(log Logger) *ModelEnsurer {
-	return &ModelEnsurer{log: log, client: &http.Client{}, baseURL: defaultModelBaseURL}
+	return &ModelEnsurer{
+		log:       log,
+		client:    newDownloadClient(),
+		baseURL:   defaultModelBaseURL,
+		checksums: modelChecksums,
+	}
 }
 
 // Ensure returns the path of the model file, downloading it first if it does not exist.
@@ -76,16 +112,21 @@ func (e *ModelEnsurer) Ensure(ctx context.Context, kind config.ModelKind, modelD
 	}
 
 	e.log.Warn(fmt.Sprintf("Model '%s' not found. Downloading Whisper %s model...", path, kind))
-	if err := e.download(ctx, e.baseURL+remoteFileName(kind), path); err != nil {
+	want, ok := e.checksums[kind]
+	if !ok {
+		e.log.Warn(fmt.Sprintf("No pinned checksum for the %s model; the download cannot be verified.", kind))
+	}
+	if err := e.download(ctx, e.baseURL+remoteFileName(kind), path, want); err != nil {
 		return "", err
 	}
 	e.log.Info("Model downloaded.")
 	return path, nil
 }
 
-// download streams url to a temp file next to dest, then renames it, so a partial download
-// is never mistaken for a complete model.
-func (e *ModelEnsurer) download(ctx context.Context, url, dest string) (err error) {
+// download streams url to a temp file next to dest, verifies its SHA-256 against wantSHA256
+// (skipped when empty), then renames it, so neither a partial nor an unverified download is
+// ever mistaken for a complete model.
+func (e *ModelEnsurer) download(ctx context.Context, url, dest, wantSHA256 string) (err error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return err
@@ -109,8 +150,15 @@ func (e *ModelEnsurer) download(ctx context.Context, url, dest string) (err erro
 		}
 	}()
 
+	var sum hash.Hash
+	dst := io.Writer(tmp)
+	if wantSHA256 != "" {
+		sum = sha256.New()
+		dst = io.MultiWriter(tmp, sum)
+	}
+
 	pr := &progressReader{r: resp.Body, total: resp.ContentLength, log: e.log, every: 10 * time.Second}
-	if _, err = io.Copy(tmp, pr); err != nil {
+	if _, err = io.Copy(dst, pr); err != nil {
 		_ = tmp.Close()
 		return fmt.Errorf("download model: %w", err)
 	}
@@ -120,6 +168,13 @@ func (e *ModelEnsurer) download(ctx context.Context, url, dest string) (err erro
 	if resp.ContentLength > 0 && pr.read != resp.ContentLength {
 		err = fmt.Errorf("download model: got %d bytes, expected %d", pr.read, resp.ContentLength)
 		return err
+	}
+	if sum != nil {
+		if got := hex.EncodeToString(sum.Sum(nil)); !strings.EqualFold(got, wantSHA256) {
+			err = fmt.Errorf("download model: %s has sha256 %s, expected %s", url, got, wantSHA256)
+			return err
+		}
+		e.log.Debug("Model checksum verified: " + wantSHA256)
 	}
 	return os.Rename(tmp.Name(), dest)
 }
