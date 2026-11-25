@@ -34,13 +34,14 @@ func (c *Console) Run(ctx context.Context, out chan<- rune) error {
 		}
 		defer restore()
 	}
-	return readKeys(ctx, c.in, out, escSeqWindow)
+	readKeys(ctx, c.in, out, escSeqWindow)
+	return nil
 }
 
 // readKeys turns a byte stream into commands. Newlines are ignored, Ctrl-C becomes 'q', a lone
 // Esc is passed through (quit), and escape sequences (arrow keys etc.) are swallowed whole.
-// It returns nil on EOF so an absent stdin does not stop the other sources.
-func readKeys(ctx context.Context, r io.Reader, out chan<- rune, escWindow time.Duration) error {
+// It returns on EOF so an absent stdin does not stop the other sources.
+func readKeys(ctx context.Context, r io.Reader, out chan<- rune, escWindow time.Duration) {
 	runes := make(chan rune)
 	go func() { // exits on EOF or when the process ends; a blocked Read cannot be cancelled
 		br := bufio.NewReader(r)
@@ -72,10 +73,10 @@ func readKeys(ctx context.Context, r io.Reader, out chan<- rune, escWindow time.
 		var ok bool
 		select {
 		case <-ctx.Done():
-			return nil
+			return
 		case ch, ok = <-runes:
 			if !ok {
-				return nil
+				return
 			}
 		}
 
@@ -93,7 +94,7 @@ func readKeys(ctx context.Context, r io.Reader, out chan<- rune, escWindow time.
 		}
 
 		if !emit(ch) {
-			return nil
+			return
 		}
 	}
 }

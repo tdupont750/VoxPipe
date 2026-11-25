@@ -18,9 +18,7 @@ func (nopLog) Warn(string) {}
 func collect(t *testing.T, in string) string {
 	t.Helper()
 	out := make(chan rune, 64)
-	if err := readKeys(context.Background(), strings.NewReader(in), out, 20*time.Millisecond); err != nil {
-		t.Fatal(err)
-	}
+	readKeys(context.Background(), strings.NewReader(in), out, 20*time.Millisecond)
 	close(out)
 	var sb strings.Builder
 	for r := range out {
@@ -79,8 +77,11 @@ func TestReadKeysUTF8(t *testing.T) {
 func TestReadKeysStopsOnCancel(t *testing.T) {
 	pr, _ := io.Pipe() // never delivers
 	ctx, cancel := context.WithCancel(context.Background())
-	done := make(chan error, 1)
-	go func() { done <- readKeys(ctx, pr, make(chan rune), time.Millisecond) }()
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		readKeys(ctx, pr, make(chan rune), time.Millisecond)
+	}()
 
 	cancel()
 	select {
@@ -129,7 +130,7 @@ func TestHTTPHandlerUnavailableWhenCancelled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	rec := httptest.NewRecorder()
-	Handler(ctx, make(chan rune)).ServeHTTP(rec, httptest.NewRequest("POST", "/command/v", nil))
+	Handler(ctx, make(chan rune)).ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/command/v", nil))
 	if rec.Code != http.StatusServiceUnavailable {
 		t.Errorf("status %d", rec.Code)
 	}
@@ -155,7 +156,7 @@ func TestHTTPRunServesAndShutsDown(t *testing.T) {
 		t.Fatal(err)
 	}
 	resp.Body.Close()
-	if resp.StatusCode != 200 || <-out != 'v' {
+	if resp.StatusCode != http.StatusOK || <-out != 'v' {
 		t.Errorf("status %d", resp.StatusCode)
 	}
 

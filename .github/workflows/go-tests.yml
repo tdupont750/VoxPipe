@@ -23,8 +23,46 @@ jobs:
       - name: Install build dependencies
         run: sudo apt-get update && sudo apt-get install -y cmake libasound2-dev
 
+      - name: Format check
+        run: make fmt-check
+
       - name: Vet
         run: make vet
 
+      - name: Build
+        run: make build
+
       - name: Test
         run: make test
+
+      - name: Test with race detector
+        run: make test-race
+
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Install build dependencies
+        run: sudo apt-get update && sudo apt-get install -y cmake libasound2-dev
+
+      # golangci-lint typechecks the cgo packages, so libwhisper must exist first.
+      - name: Build libwhisper
+        run: make libwhisper
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.1.6
+        env:
+          C_INCLUDE_PATH: ${{ github.workspace }}/third_party/whisper.cpp/include:${{ github.workspace }}/third_party/whisper.cpp/ggml/include
+          LIBRARY_PATH: ${{ github.workspace }}/build/whisper/src:${{ github.workspace }}/build/whisper/ggml/src
